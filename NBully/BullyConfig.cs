@@ -20,12 +20,14 @@ namespace NBully
 
 	public interface IBullyCommunicator
 	{
-		void StartElection(int processID);
-		void SendAlive(int processID, int toProcessID);
-		void BroadcastWin(int processID);
+		int OwnerProcessID { set; }
+
+		void StartElection();
+		void SendAlive(int toProcessID);
+		void BroadcastWin();
 
 		void OnReceivedStartElection(Action<int> handler);
-		void OnReceivedAlive(Action<int, int> handler);
+		void OnReceivedAlive(Action<int> handler);
 		void OnReceivedWin(Action<int> handler);
 
 	}
@@ -41,12 +43,13 @@ namespace NBully
 			_id = config.GetProcessID();
 			_messages = config.Communicator;
 
+			_messages.OwnerProcessID = _id;
 			_messages.OnReceivedStartElection(OnElectionStarted);
 		}
 
 		public void Start()
 		{
-			_messages.StartElection(_id);
+			_messages.StartElection();
 		}
 
 		private void OnElectionStarted(int processID)

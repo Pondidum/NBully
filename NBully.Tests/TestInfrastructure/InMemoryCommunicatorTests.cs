@@ -16,9 +16,9 @@ namespace NBully.Tests.TestInfrastructure
 		{
 			_output = output;
 			_broker = new InMemoryBroker();
-			_first = new InMemoryCommunicator(_broker);
-			_second = new InMemoryCommunicator(_broker);
-			_third = new InMemoryCommunicator(_broker);
+			_first = new InMemoryCommunicator(_broker) { OwnerProcessID = 1 };
+			_second = new InMemoryCommunicator(_broker) { OwnerProcessID = 2 };
+			_third = new InMemoryCommunicator(_broker) { OwnerProcessID = 3 };
 		}
 
 		[Fact]
@@ -32,7 +32,7 @@ namespace NBully.Tests.TestInfrastructure
 			_second.OnReceivedStartElection(pid => secondReceived = pid);
 			_third.OnReceivedStartElection(pid => thirdReceived = pid);
 
-			_first.StartElection(1);
+			_first.StartElection();
 
 			firstReceived.ShouldBeNull();
 			secondReceived.ShouldBe(1);
@@ -46,14 +46,14 @@ namespace NBully.Tests.TestInfrastructure
 			int? secondReceived = null;
 			int? thirdReceived = null;
 
-			_first.OnReceivedAlive((fromPid, toPid) => firstReceived = toPid);
-			_second.OnReceivedAlive((fromPid, toPid) => secondReceived = toPid);
-			_third.OnReceivedAlive((fromPid, toPid) => thirdReceived = toPid);
+			_first.OnReceivedAlive(fromPid => firstReceived = fromPid);
+			_second.OnReceivedAlive(fromPid => secondReceived = fromPid);
+			_third.OnReceivedAlive(fromPid => thirdReceived = fromPid);
 
-			_first.SendAlive(1, 2);
+			_first.SendAlive(toProcessID: 2);
 
 			firstReceived.ShouldBeNull();
-			secondReceived.ShouldBe(2);
+			secondReceived.ShouldBe(1);
 			thirdReceived.ShouldBeNull();
 		}
 
@@ -68,7 +68,7 @@ namespace NBully.Tests.TestInfrastructure
 			_second.OnReceivedWin(pid => secondReceived = pid);
 			_third.OnReceivedWin(pid => thirdReceived = pid);
 
-			_first.BroadcastWin(1);
+			_first.BroadcastWin();
 
 			firstReceived.ShouldBeNull();
 			secondReceived.ShouldBe(1);

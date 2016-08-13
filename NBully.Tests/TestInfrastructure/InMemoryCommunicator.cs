@@ -9,7 +9,7 @@ namespace NBully.Tests.TestInfrastructure
 		private readonly InMemoryBroker _broker;
 
 		private Action<int> _receiveStartElection;
-		private Action<int, int> _receiveAlive;
+		private Action<int> _receiveAlive;
 		private Action<int> _receiveWin;
 
 		public InMemoryCommunicator(InMemoryBroker broker)
@@ -17,22 +17,27 @@ namespace NBully.Tests.TestInfrastructure
 			_broker = broker;
 			_broker.Communicators.Add(this);
 		}
-
+		
 		private List<InMemoryCommunicator> ToOthers => _broker.Communicators.Except(new[] { this }).ToList();
 
-		public void StartElection(int processID)
+		public int OwnerProcessID { get; set; }
+
+		public void StartElection()
 		{
-			ToOthers.ForEach(c => c._receiveStartElection(processID));
+			ToOthers.ForEach(c => c._receiveStartElection(OwnerProcessID));
 		}
 
-		public void SendAlive(int processID, int toProcessID)
+		public void SendAlive(int toProcessID)
 		{
-			ToOthers.ForEach(c => c._receiveAlive(processID, toProcessID));
+			ToOthers
+				.Where(other => other.OwnerProcessID == toProcessID)
+				.ToList()
+				.ForEach(other => other._receiveAlive(OwnerProcessID));
 		}
 
-		public void BroadcastWin(int processID)
+		public void BroadcastWin()
 		{
-			ToOthers.ForEach(c => c._receiveWin(processID));
+			ToOthers.ForEach(c => c._receiveWin(OwnerProcessID));
 		}
 
 		public void OnReceivedStartElection(Action<int> handler)
@@ -40,7 +45,7 @@ namespace NBully.Tests.TestInfrastructure
 			_receiveStartElection = handler;
 		}
 
-		public void OnReceivedAlive(Action<int, int> handler)
+		public void OnReceivedAlive(Action<int> handler)
 		{
 			_receiveAlive = handler;
 		}
