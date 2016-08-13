@@ -60,10 +60,20 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TestInfrastructure\InMemoryBroker.cs" />
+    <Compile Include="TestInfrastructure\InMemoryCommunicator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Scratchpad.cs" />
+    <Compile Include="TestInfrastructure\InMemoryCommunicatorTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NBully\NBully.csproj">
+      <Project>{3ab2b6a3-45b6-47e0-861a-935d0ddbcb37}</Project>
+      <Name>NBully</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

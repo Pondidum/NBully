@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using NBully.Tests.TestInfrastructure;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace NBully.Tests
@@ -15,6 +16,17 @@ namespace NBully.Tests
 		[Fact]
 		public void When_testing_something()
 		{
+			//var first = new BullyNode(new BullyConfig()
+			//{
+			//	Timeout = TimeSpan.FromSeconds(5),
+			//	GetProcessID = () => 0
+			//});
+
+			//var second = new BullyNode(new BullyConfig
+			//{
+			//	Timeout = TimeSpan.FromSeconds(5),
+			//	GetProcessID = () => 1
+			//});
 
 		}
 	}
