@@ -40,11 +40,11 @@ namespace NBully
 
 		private void OnElectionStarted(int processID)
 		{
-			//if (processID < _id)
-			//{
-			//	_messages.SendAlive(_id, processID);
-			//	_messages.StartElection(_id);
-			//}
+			if (processID < _id)
+			{
+				_messages.SendAlive(processID);
+				_messages.StartElection();
+			}
 		}
 	}
 }
