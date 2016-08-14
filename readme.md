@@ -11,11 +11,12 @@
   * [x] begin `electionTimeout`
 
 
-* [ ] on `alive`
-  * [ ] if source_pid > pid
-    * [ ] stop  //possibly re-send election if nothing happens
-  * [ ] if pid > source_pid
-    * [ ] send `startElection` to all
+* [x] on `alive`
+  * [x] if source_pid > pid
+    * [x] add source_pid to known_parents
+    * [ ] stop `electionTimeout`
+  * [x] if pid > source_pid
+    * [x] send `startElection` to all
 
 
 * [x] on `electionTimeout`

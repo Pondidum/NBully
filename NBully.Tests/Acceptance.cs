@@ -49,6 +49,24 @@ namespace NBully.Tests
 
 			_connector.WaitForNoWin(TimeSpan.FromSeconds(5));
 		}
+
+		[Fact]
+		public void When_a_lower_node_sends_alive()
+		{
+			_connector.SendStartElection(100);
+			_connector.SendAlive(50);
+
+			_connector.WaitForWin(TimeSpan.FromSeconds(5));
+		}
+
+		[Fact]
+		public void When_a_higher_node_sends_alive()
+		{
+			_connector.SendStartElection(100);
+			_connector.SendAlive(150);
+
+			_connector.WaitForNoWin(TimeSpan.FromSeconds(5));
+		}
 	}
 
 	public class Node
@@ -69,6 +87,7 @@ namespace NBully.Tests
 			_messages.OwnerProcessID = _id;
 
 			_messages.OnReceivedStartElection(OnStartElection);
+			_messages.OnReceivedAlive(OnAlive);
 		}
 
 		private void OnStartElection(int sourcePid)
@@ -80,6 +99,12 @@ namespace NBully.Tests
 				_messages.SendAlive(sourcePid);
 
 			Task.Run(() => ElectionTimeout());
+		}
+
+		private void OnAlive(int sourcePid)
+		{
+			if (sourcePid > _id)
+				_knownProcesses.Add(sourcePid);
 		}
 
 		private void ElectionTimeout()
