@@ -9,6 +9,7 @@ namespace NBully
 	public class BullyNode
 	{
 		private readonly int _id;
+		private readonly Action<bool> _onCoordinatorChanged;
 		private readonly IBullyCommunicator _messages;
 		private readonly HashSet<int> _knownProcesses;
 		private readonly CancellationTokenSource _electionTimeout;
@@ -16,14 +17,16 @@ namespace NBully
 
 		private int _coordinator;
 
+
 		public BullyNode(BullyConfig config)
 		{
 			_coordinator = 0;
 			_knownProcesses = new HashSet<int>();
 			_electionTimeout = new CancellationTokenSource();
 
-			_timeout = config.Timeout;
 			_id = config.GetProcessID();
+			_timeout = config.Timeout;
+			_onCoordinatorChanged = config.OnCoordinatorChanged;
 			_messages = config.Communicator;
 
 			_messages.OwnerProcessID = _id;
@@ -68,7 +71,7 @@ namespace NBully
 				_electionTimeout.Cancel();
 
 			if (sourcePid >= _id)
-				_coordinator = sourcePid;
+				ChangeCoordinator(sourcePid);
 		}
 
 		private void ElectionTimeout()
@@ -82,7 +85,16 @@ namespace NBully
 				return;
 
 			_messages.BroadcastWin();
-			_coordinator = _id;
+			ChangeCoordinator(_id);
+		}
+
+		private void ChangeCoordinator(int coordinatorProcessID)
+		{
+			var previous = _coordinator;
+			_coordinator = coordinatorProcessID;
+
+			if (_coordinator != previous)
+				_onCoordinatorChanged(IsCoordinator);
 		}
 	}
 }

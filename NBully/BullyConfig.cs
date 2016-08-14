@@ -8,11 +8,13 @@ namespace NBully
 		public TimeSpan Timeout { get; set; }
 		public Func<int> GetProcessID { get; set; }
 		public IBullyCommunicator Communicator { get; set; }
+		public Action<bool> OnCoordinatorChanged { get; set; }
 
 		public BullyConfig()
 		{
 			Timeout = TimeSpan.FromSeconds(5);
 			GetProcessID = () => Process.GetCurrentProcess().Id;
+			OnCoordinatorChanged = isCoordinator => { };
 		}
 	}
 }

@@ -107,21 +107,24 @@ namespace NBully.Tests
 			{
 				Communicator = new DebugCommunicator(new InMemoryCommunicator(broker), _output),
 				GetProcessID = () => 10,
-				Timeout = TimeSpan.FromSeconds(1)
+				Timeout = TimeSpan.FromSeconds(1),
+				OnCoordinatorChanged = isCoordinator => _output.WriteLine($"10 is Coordinator: {isCoordinator}")
 			});
 
 			var second = new BullyNode(new BullyConfig
 			{
 				Communicator = new DebugCommunicator(new InMemoryCommunicator(broker), _output),
 				GetProcessID = () => 20,
-				Timeout = TimeSpan.FromSeconds(1)
+				Timeout = TimeSpan.FromSeconds(1),
+				OnCoordinatorChanged = isCoordinator => _output.WriteLine($"20 is Coordinator: {isCoordinator}")
 			});
 
 			var third = new BullyNode(new BullyConfig
 			{
 				Communicator = new DebugCommunicator(new InMemoryCommunicator(broker), _output),
 				GetProcessID = () => 30,
-				Timeout = TimeSpan.FromSeconds(1)
+				Timeout = TimeSpan.FromSeconds(1),
+				OnCoordinatorChanged = isCoordinator => _output.WriteLine($"30 is Coordinator: {isCoordinator}")
 			});
 
 
