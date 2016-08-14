@@ -20,16 +20,34 @@ namespace NBully.Tests
 			_node = new Node(new BullyConfig(_connector.Communicator)
 			{
 				GetProcessID = () => 100,
-				Timeout = TimeSpan.FromSeconds(5)
+				Timeout = TimeSpan.FromSeconds(2)
 			});
 		}
 
 		[Fact]
-		public void When_an_election_starts_and_nothing_responds()
+		public void When_the_current_node_triggers_the_election_and_nothing_responds()
 		{
 			_connector.SendStartElection(100);
 
-			_connector.WaitForWin(TimeSpan.FromSeconds(10));
+			_connector.Communicator.DidNotReceive().SendAlive(100);
+			_connector.WaitForWin(TimeSpan.FromSeconds(5));
+		}
+
+		[Fact]
+		public void When_a_lower_node_triggers_an_election()
+		{
+			_connector.SendStartElection(50);
+
+			_connector.Communicator.Received().SendAlive(50);
+			_connector.WaitForWin(TimeSpan.FromSeconds(5));
+		}
+
+		[Fact]
+		public void When_a_higher_node_triggers_an_election()
+		{
+			_connector.SendStartElection(150);
+
+			_connector.WaitForNoWin(TimeSpan.FromSeconds(5));
 		}
 	}
 
@@ -55,6 +73,12 @@ namespace NBully.Tests
 
 		private void OnStartElection(int sourcePid)
 		{
+			if (sourcePid > _id)
+				_knownProcesses.Add(sourcePid);
+
+			if (_id > sourcePid)
+				_messages.SendAlive(sourcePid);
+
 			Task.Run(() => ElectionTimeout());
 		}
 

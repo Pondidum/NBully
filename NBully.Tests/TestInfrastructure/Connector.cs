@@ -58,5 +58,11 @@ namespace NBully.Tests.TestInfrastructure
 			_onWin.WaitOne(timeout);
 			_connector.Received().BroadcastWin();
 		}
+
+		public void WaitForNoWin(TimeSpan timeout)
+		{
+			_onWin.WaitOne(timeout);
+			_connector.DidNotReceive().BroadcastWin();
+		}
 	}
 }

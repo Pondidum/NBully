@@ -3,9 +3,11 @@
   * [ ] send `startElection` to all
 
 
-* [ ] on `startElection`
-  * [ ] if pid > source_pid
-    * [ ] send `alive` to source_pid
+* [x] on `startElection`
+  * [x] if pid > source_pid
+    * [x] send `alive` to source_pid
+  * [x] if source_pid > pid
+    * [x] add source_pid to known_parents
   * [x] begin `electionTimeout`
 
 
