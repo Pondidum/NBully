@@ -20,8 +20,9 @@ namespace NBully.Tests
 		{
 			_output = output;
 			_connector = new Connector();
-			var node = new BullyNode(new BullyConfig(_connector.Communicator)
+			var node = new BullyNode(new BullyConfig
 			{
+				Communicator = _connector.Communicator,
 				GetProcessID = () => 100,
 				Timeout = TimeSpan.FromSeconds(2)
 			});
@@ -102,20 +103,23 @@ namespace NBully.Tests
 		public void When_testing_something()
 		{
 			var broker = new InMemoryBroker();
-			var first = new BullyNode(new BullyConfig(new DebugCommunicator(new InMemoryCommunicator(broker), _output))
+			var first = new BullyNode(new BullyConfig
 			{
+				Communicator = new DebugCommunicator(new InMemoryCommunicator(broker), _output),
 				GetProcessID = () => 10,
 				Timeout = TimeSpan.FromSeconds(1)
 			});
 
-			var second = new BullyNode(new BullyConfig(new DebugCommunicator(new InMemoryCommunicator(broker), _output))
+			var second = new BullyNode(new BullyConfig
 			{
+				Communicator = new DebugCommunicator(new InMemoryCommunicator(broker), _output),
 				GetProcessID = () => 20,
 				Timeout = TimeSpan.FromSeconds(1)
 			});
 
-			var third = new BullyNode(new BullyConfig(new DebugCommunicator(new InMemoryCommunicator(broker), _output))
+			var third = new BullyNode(new BullyConfig
 			{
+				Communicator = new DebugCommunicator(new InMemoryCommunicator(broker), _output),
 				GetProcessID = () => 30,
 				Timeout = TimeSpan.FromSeconds(1)
 			});

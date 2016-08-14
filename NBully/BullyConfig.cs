@@ -7,12 +7,10 @@ namespace NBully
 	{
 		public TimeSpan Timeout { get; set; }
 		public Func<int> GetProcessID { get; set; }
+		public IBullyCommunicator Communicator { get; set; }
 
-		public IBullyCommunicator Communicator { get; }
-
-		public BullyConfig(IBullyCommunicator communicator)
+		public BullyConfig()
 		{
-			Communicator = communicator;
 			Timeout = TimeSpan.FromSeconds(5);
 			GetProcessID = () => Process.GetCurrentProcess().Id;
 		}

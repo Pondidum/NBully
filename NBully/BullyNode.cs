@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -7,11 +8,12 @@ namespace NBully
 {
 	public class BullyNode
 	{
-		private readonly BullyConfig _config;
 		private readonly int _id;
 		private readonly IBullyCommunicator _messages;
 		private readonly HashSet<int> _knownProcesses;
 		private readonly CancellationTokenSource _electionTimeout;
+		private readonly TimeSpan _timeout;
+
 		private int _coordinator;
 
 		public BullyNode(BullyConfig config)
@@ -20,12 +22,11 @@ namespace NBully
 			_knownProcesses = new HashSet<int>();
 			_electionTimeout = new CancellationTokenSource();
 
-			_config = config;
+			_timeout = config.Timeout;
 			_id = config.GetProcessID();
 			_messages = config.Communicator;
 
 			_messages.OwnerProcessID = _id;
-
 			_messages.OnReceivedStartElection(OnStartElection);
 			_messages.OnReceivedAlive(OnAlive);
 			_messages.OnReceivedWin(OnWin);
@@ -72,7 +73,7 @@ namespace NBully
 
 		private void ElectionTimeout()
 		{
-			Task.Delay(_config.Timeout, _electionTimeout.Token).Wait(_electionTimeout.Token);
+			Task.Delay(_timeout, _electionTimeout.Token).Wait(_electionTimeout.Token);
 
 			if (_electionTimeout.IsCancellationRequested)
 				return;
