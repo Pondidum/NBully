@@ -5,19 +5,22 @@ using System.Threading;
 using System.Threading.Tasks;
 using NBully.Tests.TestInfrastructure;
 using NSubstitute;
+using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace NBully.Tests
 {
 	public class Acceptance
 	{
+		private readonly ITestOutputHelper _output;
 		private readonly Connector _connector;
-		private readonly Node _node;
 
-		public Acceptance()
+		public Acceptance(ITestOutputHelper output)
 		{
+			_output = output;
 			_connector = new Connector();
-			_node = new Node(new BullyConfig(_connector.Communicator)
+			var node = new Node(new BullyConfig(_connector.Communicator)
 			{
 				GetProcessID = () => 100,
 				Timeout = TimeSpan.FromSeconds(2)
@@ -94,6 +97,38 @@ namespace NBully.Tests
 
 			_connector.WaitForNoWin(TimeSpan.FromSeconds(5));
 		}
+
+		[Fact]
+		public void When_testing_something()
+		{
+			var broker = new InMemoryBroker();
+			var first = new Node(new BullyConfig(new DebugCommunicator(new InMemoryCommunicator(broker), _output))
+			{
+				GetProcessID = () => 10,
+				Timeout = TimeSpan.FromSeconds(1)
+			});
+
+			var second = new Node(new BullyConfig(new DebugCommunicator(new InMemoryCommunicator(broker), _output))
+			{
+				GetProcessID = () => 20,
+				Timeout = TimeSpan.FromSeconds(1)
+			});
+
+			var third = new Node(new BullyConfig(new DebugCommunicator(new InMemoryCommunicator(broker), _output))
+			{
+				GetProcessID = () => 30,
+				Timeout = TimeSpan.FromSeconds(1)
+			});
+
+
+			first.Start();
+
+			Thread.Sleep(TimeSpan.FromSeconds(10));
+
+			first.IsCoordinator.ShouldBe(false);
+			second.IsCoordinator.ShouldBe(false);
+			third.IsCoordinator.ShouldBe(true);
+		}
 	}
 
 	public class Node
@@ -103,9 +138,11 @@ namespace NBully.Tests
 		private readonly IBullyCommunicator _messages;
 		private readonly HashSet<int> _knownProcesses;
 		private readonly CancellationTokenSource _electionTimeout;
+		private int _coordinator;
 
 		public Node(BullyConfig config)
 		{
+			_coordinator = 0;
 			_knownProcesses = new HashSet<int>();
 			_electionTimeout = new CancellationTokenSource();
 
@@ -118,6 +155,13 @@ namespace NBully.Tests
 			_messages.OnReceivedStartElection(OnStartElection);
 			_messages.OnReceivedAlive(OnAlive);
 			_messages.OnReceivedWin(OnWin);
+		}
+
+		public bool IsCoordinator => _coordinator == _id;
+
+		public void Start()
+		{
+			_messages.StartElection();
 		}
 
 		private void OnStartElection(int sourcePid)
@@ -147,6 +191,9 @@ namespace NBully.Tests
 
 			if (sourcePid == _id)
 				_electionTimeout.Cancel();
+
+			if (sourcePid >= _id)
+				_coordinator = sourcePid;
 		}
 
 		private void ElectionTimeout()
@@ -156,8 +203,11 @@ namespace NBully.Tests
 			if (_electionTimeout.IsCancellationRequested)
 				return;
 
-			if (_knownProcesses.Any() == false)
-				_messages.BroadcastWin();
+			if (_knownProcesses.Any())
+				return;
+
+			_messages.BroadcastWin();
+			_coordinator = _id;
 		}
 	}
 }
