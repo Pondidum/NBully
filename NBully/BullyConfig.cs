@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace NBully
 {
@@ -20,22 +24,36 @@ namespace NBully
 
 	public class BullyNode
 	{
-		//private readonly BullyConfig _config;
+		private readonly BullyConfig _config;
 		private readonly int _id;
 		private readonly IBullyCommunicator _messages;
+		private readonly HashSet<int> _knownProcesses;
 
 		public BullyNode(BullyConfig config)
 		{
+			_config = config;
 			_id = config.GetProcessID();
 			_messages = config.Communicator;
 
+			_knownProcesses = new HashSet<int>();
+
 			_messages.OwnerProcessID = _id;
 			_messages.OnReceivedStartElection(OnElectionStarted);
+			_messages.OnReceivedAlive(OnAlive);
 		}
 
-		public void Start()
+
+		public Task Start()
 		{
 			_messages.StartElection();
+
+			return Task.Run(() =>
+			{
+				Thread.Sleep(_config.Timeout);
+
+				if (_knownProcesses.Any() == false)
+					_messages.BroadcastWin();
+			});
 		}
 
 		private void OnElectionStarted(int processID)
@@ -45,6 +63,12 @@ namespace NBully
 				_messages.SendAlive(processID);
 				_messages.StartElection();
 			}
+		}
+
+		private void OnAlive(int pid)
+		{
+			if (pid > _id)
+				_knownProcesses.Add(pid);
 		}
 	}
 }
