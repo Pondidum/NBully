@@ -34,7 +34,7 @@ namespace NBully.Tests.TestInfrastructure
 
 			_first.StartElection();
 
-			firstReceived.ShouldBeNull();
+			firstReceived.ShouldBe(1);
 			secondReceived.ShouldBe(1);
 			thirdReceived.ShouldBe(1);
 		}

@@ -17,19 +17,20 @@ namespace NBully.Tests.TestInfrastructure
 			_broker = broker;
 			_broker.Communicators.Add(this);
 		}
-		
-		private List<InMemoryCommunicator> ToOthers => _broker.Communicators.Except(new[] { this }).ToList();
 
 		public int OwnerProcessID { get; set; }
 
 		public void StartElection()
 		{
-			ToOthers.ForEach(c => c._receiveStartElection(OwnerProcessID));
+			_broker
+				.Communicators
+				.ForEach(c => c._receiveStartElection(OwnerProcessID));
 		}
 
 		public void SendAlive(int toProcessID)
 		{
-			ToOthers
+			_broker
+				.Communicators
 				.Where(other => other.OwnerProcessID == toProcessID)
 				.ToList()
 				.ForEach(other => other._receiveAlive(OwnerProcessID));
@@ -37,7 +38,11 @@ namespace NBully.Tests.TestInfrastructure
 
 		public void BroadcastWin()
 		{
-			ToOthers.ForEach(c => c._receiveWin(OwnerProcessID));
+			_broker
+				.Communicators
+				.Except(new[] { this })
+				.ToList()
+				.ForEach(c => c._receiveWin(OwnerProcessID));
 		}
 
 		public void OnReceivedStartElection(Action<int> handler)
