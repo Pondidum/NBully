@@ -67,6 +67,33 @@ namespace NBully.Tests
 
 			_connector.WaitForNoWin(TimeSpan.FromSeconds(5));
 		}
+
+		[Fact]
+		public void When_an_election_is_won_by_a_lower_node()
+		{
+			_connector.SendStartElection(100);
+			_connector.SendWin(50);
+
+			_connector.Communicator.Received().StartElection();
+		}
+
+		[Fact]
+		public void When_an_election_is_won_by_a_higher_node()
+		{
+			_connector.SendStartElection(100);
+			_connector.SendWin(150);
+
+			_connector.WaitForNoWin(TimeSpan.FromSeconds(5));
+		}
+
+		[Fact]
+		public void When_an_election_is_won_by_current_node()
+		{
+			_connector.SendStartElection(100);
+			_connector.SendWin(100);
+
+			_connector.WaitForNoWin(TimeSpan.FromSeconds(5));
+		}
 	}
 
 	public class Node
@@ -75,10 +102,12 @@ namespace NBully.Tests
 		private readonly int _id;
 		private readonly IBullyCommunicator _messages;
 		private readonly HashSet<int> _knownProcesses;
+		private readonly CancellationTokenSource _electionTimeout;
 
 		public Node(BullyConfig config)
 		{
 			_knownProcesses = new HashSet<int>();
+			_electionTimeout = new CancellationTokenSource();
 
 			_config = config;
 			_id = config.GetProcessID();
@@ -88,6 +117,7 @@ namespace NBully.Tests
 
 			_messages.OnReceivedStartElection(OnStartElection);
 			_messages.OnReceivedAlive(OnAlive);
+			_messages.OnReceivedWin(OnWin);
 		}
 
 		private void OnStartElection(int sourcePid)
@@ -107,9 +137,24 @@ namespace NBully.Tests
 				_knownProcesses.Add(sourcePid);
 		}
 
+		private void OnWin(int sourcePid)
+		{
+			if (sourcePid > _id)
+				_knownProcesses.Add(sourcePid);
+
+			if (sourcePid < _id)
+				_messages.StartElection();
+
+			if (sourcePid == _id)
+				_electionTimeout.Cancel();
+		}
+
 		private void ElectionTimeout()
 		{
-			Thread.Sleep(_config.Timeout);
+			Task.Delay(_config.Timeout, _electionTimeout.Token).Wait(_electionTimeout.Token);
+
+			if (_electionTimeout.IsCancellationRequested)
+				return;
 
 			if (_knownProcesses.Any() == false)
 				_messages.BroadcastWin();

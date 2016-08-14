@@ -24,5 +24,7 @@
     * [x] send `electionWon`
 
 
-* [ ] on `electionWon`
-  * [ ] stop `electionTimeout`
+* [x] on `electionWon`
+  * [x] stop `electionTimeout`
+  * [x] if source_pid > pid
+    * [x] send `startElection` to all
