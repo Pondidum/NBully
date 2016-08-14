@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using NSubstitute;
 
 namespace NBully.Tests.TestInfrastructure
@@ -10,8 +12,11 @@ namespace NBully.Tests.TestInfrastructure
 		private Action<int> _sendAlive;
 		private Action<int> _sendWin;
 
+		private readonly ManualResetEvent _onWin;
+
 		public Connector()
 		{
+			_onWin = new ManualResetEvent(false);
 			_connector = Substitute.For<IBullyCommunicator>();
 
 			_connector
@@ -25,6 +30,10 @@ namespace NBully.Tests.TestInfrastructure
 			_connector
 				.When(c => c.OnReceivedWin(Arg.Any<Action<int>>()))
 				.Do(ci => _sendWin = ci.Arg<Action<int>>());
+
+			_connector
+				.When(c => c.BroadcastWin())
+				.Do(ci => _onWin.Set());
 		}
 
 		public IBullyCommunicator Communicator => _connector;
@@ -42,6 +51,12 @@ namespace NBully.Tests.TestInfrastructure
 		public void SendWin(int fromPid)
 		{
 			_sendWin(fromPid);
+		}
+
+		public void WaitForWin(TimeSpan timeout)
+		{
+			_onWin.WaitOne(timeout);
+			_connector.Received().BroadcastWin();
 		}
 	}
 }
