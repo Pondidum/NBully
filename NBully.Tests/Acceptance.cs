@@ -20,7 +20,7 @@ namespace NBully.Tests
 		{
 			_output = output;
 			_connector = new Connector();
-			var node = new Node(new BullyConfig(_connector.Communicator)
+			var node = new BullyNode(new BullyConfig(_connector.Communicator)
 			{
 				GetProcessID = () => 100,
 				Timeout = TimeSpan.FromSeconds(2)
@@ -102,19 +102,19 @@ namespace NBully.Tests
 		public void When_testing_something()
 		{
 			var broker = new InMemoryBroker();
-			var first = new Node(new BullyConfig(new DebugCommunicator(new InMemoryCommunicator(broker), _output))
+			var first = new BullyNode(new BullyConfig(new DebugCommunicator(new InMemoryCommunicator(broker), _output))
 			{
 				GetProcessID = () => 10,
 				Timeout = TimeSpan.FromSeconds(1)
 			});
 
-			var second = new Node(new BullyConfig(new DebugCommunicator(new InMemoryCommunicator(broker), _output))
+			var second = new BullyNode(new BullyConfig(new DebugCommunicator(new InMemoryCommunicator(broker), _output))
 			{
 				GetProcessID = () => 20,
 				Timeout = TimeSpan.FromSeconds(1)
 			});
 
-			var third = new Node(new BullyConfig(new DebugCommunicator(new InMemoryCommunicator(broker), _output))
+			var third = new BullyNode(new BullyConfig(new DebugCommunicator(new InMemoryCommunicator(broker), _output))
 			{
 				GetProcessID = () => 30,
 				Timeout = TimeSpan.FromSeconds(1)
@@ -128,86 +128,6 @@ namespace NBully.Tests
 			first.IsCoordinator.ShouldBe(false);
 			second.IsCoordinator.ShouldBe(false);
 			third.IsCoordinator.ShouldBe(true);
-		}
-	}
-
-	public class Node
-	{
-		private readonly BullyConfig _config;
-		private readonly int _id;
-		private readonly IBullyCommunicator _messages;
-		private readonly HashSet<int> _knownProcesses;
-		private readonly CancellationTokenSource _electionTimeout;
-		private int _coordinator;
-
-		public Node(BullyConfig config)
-		{
-			_coordinator = 0;
-			_knownProcesses = new HashSet<int>();
-			_electionTimeout = new CancellationTokenSource();
-
-			_config = config;
-			_id = config.GetProcessID();
-			_messages = config.Communicator;
-
-			_messages.OwnerProcessID = _id;
-
-			_messages.OnReceivedStartElection(OnStartElection);
-			_messages.OnReceivedAlive(OnAlive);
-			_messages.OnReceivedWin(OnWin);
-		}
-
-		public bool IsCoordinator => _coordinator == _id;
-
-		public void Start()
-		{
-			_messages.StartElection();
-		}
-
-		private void OnStartElection(int sourcePid)
-		{
-			if (sourcePid > _id)
-				_knownProcesses.Add(sourcePid);
-
-			if (_id > sourcePid)
-				_messages.SendAlive(sourcePid);
-
-			Task.Run(() => ElectionTimeout());
-		}
-
-		private void OnAlive(int sourcePid)
-		{
-			if (sourcePid > _id)
-				_knownProcesses.Add(sourcePid);
-		}
-
-		private void OnWin(int sourcePid)
-		{
-			if (sourcePid > _id)
-				_knownProcesses.Add(sourcePid);
-
-			if (sourcePid < _id)
-				_messages.StartElection();
-
-			if (sourcePid == _id)
-				_electionTimeout.Cancel();
-
-			if (sourcePid >= _id)
-				_coordinator = sourcePid;
-		}
-
-		private void ElectionTimeout()
-		{
-			Task.Delay(_config.Timeout, _electionTimeout.Token).Wait(_electionTimeout.Token);
-
-			if (_electionTimeout.IsCancellationRequested)
-				return;
-
-			if (_knownProcesses.Any())
-				return;
-
-			_messages.BroadcastWin();
-			_coordinator = _id;
 		}
 	}
 }
