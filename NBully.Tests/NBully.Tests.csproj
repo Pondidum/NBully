@@ -67,6 +67,7 @@
     <Compile Include="Acceptance.cs" />
     <Compile Include="BullyNodeTests.cs" />
     <Compile Include="TestInfrastructure\Connector.cs" />
+    <Compile Include="TestInfrastructure\DebugCommunicator.cs" />
     <Compile Include="TestInfrastructure\InMemoryBroker.cs" />
     <Compile Include="TestInfrastructure\InMemoryCommunicator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
